@@ -1,0 +1,10 @@
+#!/bin/sh
+
+if [ -z "$1" ]; then
+	>&2 echo "$0: missing file operand"
+	exit 1
+fi
+
+for f do
+	:>> "$f"
+done
