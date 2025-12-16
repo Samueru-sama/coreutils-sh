@@ -13,7 +13,6 @@ _print_info(){
 
 if [ -z "$1" ]; then
 	_print_info 'ostype'
-	echo ""
 else
 	while getopts ":athrvm" opt; do
 		case "$opt" in
@@ -43,4 +42,3 @@ else
 	fi
 fi
 echo ""
-
