@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# from https://github.com/dylanaraps/bareutils/blob/master/bin/yes
+
+while :; do
+	echo "${1:-y}"
+done

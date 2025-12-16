@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# from https://github.com/dylanaraps/pure-sh-bible
+
+if [ -z "$1" ]; then
+	return 1
+fi
+
+dir=${1%${1##*[!/]}}
+dir=${dir##*/}
+
+if [ -n "$2" ]; then
+	dir=${dir%"$2"}
+fi
+
+echo "${dir:-/}"

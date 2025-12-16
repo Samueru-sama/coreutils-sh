@@ -1,0 +1,46 @@
+#!/bin/sh
+
+unset a t h r v m
+
+_print_info(){
+	read -r i < /proc/sys/kernel/"$1"
+	if [ -n "$i" ]; then
+		printf '%s ' "$i"
+	else
+		exit 1
+	fi
+}
+
+if [ -z "$1" ]; then
+	_print_info 'ostype'
+	echo ""
+else
+	while getopts ":athrvm" opt; do
+		case "$opt" in
+			a) a=1;;
+			t) t=1;;
+			h) h=1;;
+			r) r=1;;
+			v) v=1;;
+			m) m=1;;
+		esac
+	done
+
+	if [ "$a" = 1 ]; then
+		_print_info 'ostype'
+		_print_info 'hostname'
+		_print_info 'osrelease'
+		_print_info 'version'
+		_print_info 'arch'
+		# even alpine's uname prints this lol
+		printf '%s' GNU/Linux
+	else
+		[ -n "$t" ] && _print_info 'ostype'
+		[ -n "$h" ] && _print_info 'hostname'
+		[ -n "$r" ] && _print_info 'osrelease'
+		[ -n "$v" ] && _print_info 'version'
+		[ -n "$m" ] && _print_info 'arch'
+	fi
+fi
+echo ""
+

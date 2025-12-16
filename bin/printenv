@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# this is not safe
+# TODO find a safer way to do this
+
+status=0
+for v do
+	v=$(eval echo "\$$v")
+	if [ -n "$v" ]; then
+		echo "$v"
+	else
+		status=1
+	fi
+done
+
+exit "$status"
+

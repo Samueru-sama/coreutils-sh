@@ -1,0 +1,10 @@
+#!/bin/sh
+
+read -r arch < /proc/sys/kernel/arch
+
+if [ -n "$arch" ]; then
+	echo "$arch"
+else
+	exit 1
+fi
+

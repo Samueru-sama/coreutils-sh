@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# posix sh version of https://github.com/dylanaraps/bareutils/blob/master/bin/locale
+
+set -- \
+	LANG           \
+	LC_CTYPE       \
+	LC_NUMERIC     \
+	LC_TIME        \
+	LC_COLLATE     \
+	LC_MONETARY    \
+	LC_MESSAGES    \
+	LC_PAPER       \
+	LC_NAME        \
+	LC_ADDRESS     \
+	LC_TELEPHONE   \
+	LC_MEASUREMENT \
+	LC_IDENTIFICATION
+
+for var do
+	printf '%s=\"%s\"\n' "$var" "${!var:-$LANG}"
+done
+printf '%s=%s\n' "LC_ALL" "$LC_ALL"

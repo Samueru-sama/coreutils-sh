@@ -1,0 +1,10 @@
+#!/bin/sh
+
+read -r hostname < /proc/sys/kernel/hostname
+
+if [ -n "$hostname" ]; then
+	echo "$hostname"
+else
+	exit 1
+fi
+

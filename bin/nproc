@@ -1,0 +1,12 @@
+#!/bin/sh
+
+count=0
+while IFS="" read -r line; do
+	case "$line" in
+		processor*:*)
+			count=$(( count + 1 ))
+			;;
+	esac
+done < /proc/cpuinfo
+
+echo "$count"

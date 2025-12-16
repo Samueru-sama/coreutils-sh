@@ -1,0 +1,25 @@
+#!/bin/sh
+
+_get_uid() {
+	while IFS=: read -r key val; do
+		if [ "$key" = "Uid" ]; then
+			set -- $val
+			echo "$1"
+			return 0
+		fi
+	done < /proc/self/status
+	return 1
+}
+
+if uid=$(_get_uid) && [ -r /etc/passwd ]; then
+	while IFS="" read -r line; do
+		IFS=:; set -- $line
+		if [ "$3" = "$uid" ]; then
+			echo "$1"
+			exit 0
+		fi
+	done < /etc/passwd
+fi
+
+exit 1
+

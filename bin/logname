@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ -n "$LOGNAME" ]; then
+	echo "$LOGNAME"
+else
+	>&2 echo "logname: no login name"
+	exit 1
+fi
