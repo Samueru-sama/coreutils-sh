@@ -1,5 +1,43 @@
 #!/bin/sh
 
+unset del
+
+_version() {
+	echo "devel"
+	exit 0
+}
+
+_help() {
+	echo "Usage: $0 [OPTION]..."
+	echo "Print the number of processing units available to the current process,"
+	echo "which may be less than the number of online processors"
+	echo "      --all      print the number of installed processors"
+	echo "      --ignore N  if possible, exclude N processing units"
+	echo "      --help        display this help and exit"
+	echo "      --version     output version information and exit"
+	exit 0
+}
+
+_error() {
+	>&2 echo "$*"
+	>&2 echo "Try '$0 --help' for more information."
+	exit 1
+}
+
+case "$1" in
+	--help)    _help;;
+	--ignore)  del=$2;;
+	--version) _version;;
+	-*)
+		_error "$0: invalid option -- '$1'"
+		;;
+	*)
+		if [ -n "$1" ]; then
+			_error "$0: extra operand $1"
+		fi
+		;;
+esac
+
 count=0
 while IFS="" read -r line; do
 	case "$line" in
@@ -8,5 +46,12 @@ while IFS="" read -r line; do
 			;;
 	esac
 done < /proc/cpuinfo
+
+if [ -n "$del" ]; then
+	count=$(( count - del ))
+	if [ "$count" -lt 1 ]; then
+		count=1
+	fi
+fi
 
 echo "$count"
