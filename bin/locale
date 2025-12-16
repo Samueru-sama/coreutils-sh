@@ -18,6 +18,7 @@ set -- \
 	LC_IDENTIFICATION
 
 for var do
-	printf '%s=\"%s\"\n' "$var" "${!var:-$LANG}"
+	vaue=$(eval echo "\$$var")
+	echo "$var=${value:-$LANG}"
 done
-printf '%s=%s\n' "LC_ALL" "$LC_ALL"
+echo "LC_ALL=$LC_ALL"
