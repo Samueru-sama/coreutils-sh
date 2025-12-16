@@ -1,44 +1,98 @@
 #!/bin/sh
 
-unset a t h r v m
+unset s a n r v m o sep
 
 _print_info(){
 	read -r i < /proc/sys/kernel/"$1"
 	if [ -n "$i" ]; then
-		printf '%s ' "$i"
+		printf '%s%s' "$sep" "$i"
+		sep=' '
 	else
 		exit 1
 	fi
 }
 
-if [ -z "$1" ]; then
-	_print_info 'ostype'
-else
-	while getopts ":athrvm" opt; do
-		case "$opt" in
-			a) a=1;;
-			t) t=1;;
-			h) h=1;;
-			r) r=1;;
-			v) v=1;;
-			m) m=1;;
-		esac
-	done
+_error() {
+	>&2 echo "$*"
+	>&2 echo "Try '$0 --help' for more information."
+	exit 1
+}
 
-	if [ "$a" = 1 ]; then
-		_print_info 'ostype'
-		_print_info 'hostname'
-		_print_info 'osrelease'
-		_print_info 'version'
-		_print_info 'arch'
-		# even alpine's uname prints this lol
-		printf '%s' GNU/Linux
-	else
-		[ -n "$t" ] && _print_info 'ostype'
-		[ -n "$h" ] && _print_info 'hostname'
-		[ -n "$r" ] && _print_info 'osrelease'
-		[ -n "$v" ] && _print_info 'version'
-		[ -n "$m" ] && _print_info 'arch'
-	fi
+_gnu_linux() {
+	printf '%s%s' "$sep" 'GNU/Linux'
+	sep=' '
+}
+
+_help() {
+	echo "Usage: uname [OPTION]..."
+	echo "Print certain system information.  With no OPTION, same as -s."
+	echo ""
+	echo "  -a, --all                print all information, in the following order,"
+	echo "                             except omit -p and -i if unknown:"
+	echo "  -s, --kernel-name        print the kernel name"
+	echo "  -n, --nodename           print the network node hostname"
+	echo "  -r, --kernel-release     print the kernel release"
+	echo "  -v, --kernel-version     print the kernel version"
+	echo "  -m, --machine            print the machine hardware name"
+	echo "  -o, --operating-system   print the operating system"
+	echo "      --help        display this help and exit"
+	echo "      --version     output version information and exit"
+	exit 0
+}
+
+if [ -z "$1" ]; then
+	 _print_info 'ostype'
+	echo ""
+	exit 0
+fi
+
+while :; do case "$1" in
+	--help)             _help;;
+	--all)              a=1; shift;;
+	--kernel-name)      s=1; shift;;
+	--nodename)         n=1; shift;;
+	--kernel-release)   r=1; shift;;
+	--machine)          m=1; shift;;
+	--operating-system) o=1; shift;;
+	-*)
+		while getopts ":sanrvmo" opt; do
+			case "$opt" in
+				s) s=1;;
+				a) a=1;;
+				n) n=1;;
+				r) r=1;;
+				v) v=1;;
+				m) m=1;;
+				o) o=1;;
+				*)
+					_error "$0: invalid option -- '$1'"
+					;;
+			esac
+		done
+		shift
+		;;
+	'')
+		break
+		;;
+	*)
+		_error "$0: extra operand $1"
+		;;
+	esac
+done
+
+if [ "$a" = 1 ]; then
+	_print_info 'ostype'
+	_print_info 'hostname'
+	_print_info 'osrelease'
+	_print_info 'version'
+	_print_info 'arch'
+	_gnu_linux
+else
+	[ -n "$s" ] && _print_info 'ostype'
+	[ -n "$n" ] && _print_info 'hostname'
+	[ -n "$r" ] && _print_info 'osrelease'
+	[ -n "$v" ] && _print_info 'version'
+	[ -n "$m" ] && _print_info 'arch'
+	[ -n "$o" ] && _gnu_linux
 fi
 echo ""
