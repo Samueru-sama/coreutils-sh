@@ -1,17 +1,114 @@
 #!/bin/sh
 
-# this is not safe
-# TODO find a safer way to do this
+# This version of printenv uses some tricks with _ to avoid changing the
+# environment during normal operation, however it is not possible to fully
+# 100% preserve the environment when there are errors, as result when
+# one of the functions fails its exit status is saved into the variable:
+# _________________________exit_status__
+# unlikely to be a problem in practice anyway
 
-status=0
-for v do
-	v=$(eval echo "\$$v")
-	if [ -n "$v" ]; then
-		echo "$v"
-	else
-		status=1
-	fi
+unset _________________________exit_status__
+
+_version() {
+	echo "devel"
+	exit 0
+}
+
+_help() {
+	echo "Usage: printenv [OPTION] [VARIABLE]..."
+	echo "Print the values of the specified environment VARIABLE(s)."
+	echo "If no VARIABLE is specified, print name and value pairs for them all."
+	echo ""
+	echo "  -0, --null     end each output line with NUL, not newline"
+	echo "      --help        display this help and exit"
+	echo "      --version     output version information and exit"
+	echo ""
+	echo "Your shell may have its own version of printenv, which usually supersedes"
+	echo "the version described here.  Please refer to your shell's documentation"
+	echo "for details about the options it supports."
+	exit 0
+}
+
+_error() {
+	>&2 echo "$*"
+	>&2 echo "Try '$0 --help' for more information."
+	exit 1
+}
+
+_print_all_env() {
+	set
+	exit 0
+}
+
+# we need two similar functions since we cannot modify the environment
+# the only difference betwent the functions is echo "$_" vs printf '%s\0'
+#
+# also use _ to save the exit status, to prevent the functions from changing
+# the exit status saved into _ they need to run in a subshell
+#
+_printenv() (
+	case "$1" in
+		*['('')''`'';''-']*)
+			return 1
+			;;
+		*)
+			# restore _ if it happens to be the argument given
+			if [ "$1" = '_' ]; then
+				_=0
+			fi
+
+			if [ -n "$(eval echo "\$$_")" ]; then
+				echo "$(eval echo "\$$_")"
+			else
+				return 1
+			fi
+			;;
+	esac
+)
+
+_printenv_null() (
+	case "$1" in
+		*['('')''`'';''-']*)
+			return 1
+			;;
+		*)
+			# restore _ if it happens to be the argument given
+			if [ "$1" = '_' ]; then
+				_=0
+			fi
+
+			if [ -n "$(eval echo "\$$_")" ]; then
+				printf '%s\0' "$(eval echo "\$$_")"
+			else
+				return 1
+			fi
+			;;
+	esac
+)
+
+while :; do case "$1" in
+	'')         _print_all_env;;
+	--)         shift; break;;
+	--help)     _help;;
+	--version)  _version;;
+	-0|--null)  shift; _=null-print;;
+	-*)         _error "$0: invalid option -- '$1'";;
+	*)          break;;
+	esac
 done
 
-exit "$status"
+if [ "$_" = 'null-print' ]; then
+	for _ do
+		_printenv_null "$_" || _________________________exit_status__=1
+	done
+else
+	for _ do
+		_printenv "$_" || _________________________exit_status__=1
+	done
+fi
 
+if [ "$_________________________exit_status__" = 1 ]; then
+	exit 1
+else
+	exit 0
+fi
