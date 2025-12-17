@@ -24,34 +24,45 @@ _error() {
 	exit 1
 }
 
-case "$1" in
-	--help)    _help;;
-	--ignore)  del=$2;;
-	--version) _version;;
-	-*)
-		_error "$0: invalid option -- '$1'"
-		;;
-	*)
-		if [ -n "$1" ]; then
-			_error "$0: extra operand $1"
-		fi
-		;;
-esac
-
-count=0
-while IFS="" read -r line; do
-	case "$line" in
-		processor*:*)
-			count=$(( count + 1 ))
-			;;
-	esac
-done < /proc/cpuinfo
-
-if [ -n "$del" ]; then
-	count=$(( count - del ))
-	if [ "$count" -lt 1 ]; then
-		count=1
+_ignore() {
+	if [ -z "$2" ]; then
+		_error "$0: option '$1' requires an argument"
 	fi
+	del=$2
+}
+
+_nproc() {
+	count=0
+	while IFS="" read -r line; do
+		case "$line" in
+			processor*:*)
+				count=$(( count + 1 ))
+				;;
+		esac
+	done < /proc/cpuinfo
+
+	if [ -n "$del" ]; then
+		count=$(( count - del ))
+		if [ "$count" -lt 1 ]; then
+			count=1
+		fi
+	fi
+
+	echo "$count"
+}
+
+while :; do case "$1" in
+	--)         shift; break;;
+	--help)     _help;;
+	--version)  _version;;
+	--ignore)   _ignore "$@"; shift; shift;;
+	-*)         _error "$0: invalid option -- '$1'";;
+	*)          break;;
+	esac
+done
+
+if [ -n "$1" ]; then
+	_error "$0: extra operand '$1'"
 fi
 
-echo "$count"
+_nproc
