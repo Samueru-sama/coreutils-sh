@@ -2,15 +2,71 @@
 
 # from https://github.com/dylanaraps/pure-sh-bible
 
-if [ -z "$1" ]; then
-	return 1
+unset m s
+
+_version() {
+	echo "devel"
+	exit 0
+}
+
+_help() {
+	echo "Usage: $0 NAME [SUFFIX]"
+	echo "  or:  $0 OPTION... NAME..."
+	echo "Print NAME with any leading directory components removed."
+	echo "If specified, also remove a trailing SUFFIX."
+	echo ""
+	echo "Mandatory arguments to long options are mandatory for short options too."
+	echo "  -a, --multiple       support multiple arguments and treat each as a NAME"
+	echo "  -s, --suffix=SUFFIX  remove a trailing SUFFIX; implies -a"
+	echo "  -z, --zero           end each output line with NUL, not newline"
+	echo "      --help        display this help and exit"
+	echo "      --version     output version information and exit"
+	echo ""
+	echo "Examples:"
+	echo "  $0 /usr/bin/sort          -> \"sort\""
+	echo "  $0 include/stdio.h .h     -> \"stdio\""
+	echo "  $0 -s .h include/stdio.h  -> \"stdio\""
+	echo "  $0 -a any/str1 any/str2   -> \"str1\" followed by \"str2\""
+	exit 0
+}
+
+_error() {
+	>&2 echo "$*"
+	>&2 echo "Try '$0 --help' for more information."
+	exit 1
+}
+
+_basename() {
+	if [ -z "$1" ]; then
+		exit 1
+	fi
+
+	dir=${1%${1##*[!/]}}
+	dir=${dir##*/}
+
+	if [ -n "$s" ]; then
+		dir=${dir%"$s"}
+	fi
+
+	echo "${dir:-/}"
+}
+
+while :; do case "$1" in
+	--)            shift; break;;
+	--help)        _help;;
+	--version)     _version;;
+	-a|--multiple) m=1; shift;;
+	-s|--suffix)   m=1; shift; s=$1; shift;;
+	'')            _error "$0: missing operand";;
+	-*)            _error "$0: invalid option -- '$1'";;
+	*)             break;;
+	esac
+done
+
+if [ -n "$m" ]; then
+	for i do
+		_basename "$i"
+	done
+else
+	_basename "$1"
 fi
-
-dir=${1%${1##*[!/]}}
-dir=${dir##*/}
-
-if [ -n "$2" ]; then
-	dir=${dir%"$2"}
-fi
-
-echo "${dir:-/}"

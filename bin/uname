@@ -2,7 +2,7 @@
 
 unset s a n r v m o sep
 
-_print_info(){
+_print_info() {
 	read -r i < /proc/sys/kernel/"$1"
 	if [ -n "$i" ]; then
 		printf '%s%s' "$sep" "$i"
@@ -24,7 +24,7 @@ _gnu_linux() {
 }
 
 _help() {
-	echo "Usage: uname [OPTION]..."
+	echo "Usage: $0 [OPTION]..."
 	echo "Print certain system information.  With no OPTION, same as -s."
 	echo ""
 	echo "  -a, --all                print all information, in the following order,"
