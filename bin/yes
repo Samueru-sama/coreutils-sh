@@ -2,6 +2,39 @@
 
 # from https://github.com/dylanaraps/bareutils/blob/master/bin/yes
 
-while :; do
-	echo "${1:-y}"
-done
+_version() {
+	echo "devel"
+	exit 0
+}
+
+_help() {
+	echo "Usage: $0 [STRING]..."
+	echo "  or:  $0 OPTION"
+	echo "Repeatedly output a line with all specified STRING(s), or 'y'."
+	echo ""
+	echo "      --help        display this help and exit"
+	echo "      --version     output version information and exit"
+	exit 0
+}
+
+_error() {
+	>&2 echo "$*"
+	>&2 echo "Try '$0 --help' for more information."
+	exit 1
+}
+
+_yes () {
+	y="$*"
+	while :; do
+		echo "${y:-y}"
+	done
+}
+
+case "$1" in
+	--)         shift;;
+	--help)     _help;;
+	--version)  _version;;
+	-*)         _error "$0: invalid option -- '$1'";;
+esac
+
+_yes "$@"
