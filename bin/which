@@ -1,6 +1,5 @@
 #!/bin/sh
 
-
 unset a
 
 _version() {
