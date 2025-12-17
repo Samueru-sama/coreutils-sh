@@ -24,16 +24,19 @@ _get_arch() {
 	read -r arch < /proc/sys/kernel/arch
 	if [ -n "$arch" ]; then
 		echo "$arch"
-	else
-		exit 1
+		exit 0
 	fi
+	exit 1
 }
 
-case "$1" in
+while :; do case "$1" in
 	--)         shift; break;;
 	--help)     _help;;
 	--version)  _version;;
-	'')         _get_arch;;
+	'')         break;;
+	-*)         _error "$0: invalid option -- '$1'";;
 	*)          _error "$0: extra operand '$1'";;
-esac
+	esac
+done
 
+_get_arch
