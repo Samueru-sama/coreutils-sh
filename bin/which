@@ -1,12 +1,73 @@
 #!/bin/sh
 
-status=0
 
-for cmd do
-	if ! command -v "$cmd"; then
-		>&2 echo "$cmd not found"
-		status=1
+unset a
+
+_version() {
+	echo "devel"
+	exit 0
+}
+
+_help() {
+	echo "Usage: $0 [OPTION] NAME..."
+	echo "Output the pathnames of the files which would be executed"
+	echo "in the current environment in a strictly POSIX shell."
+	echo ""
+	echo "  -a, --all      print all matching pathnames of each argument"
+	echo "      --help     display this help and exit"
+	echo "      --version  output version information and exit"
+	exit 0
+}
+
+_error() {
+	>&2 echo "$*"
+	>&2 echo "Try '$0 --help' for more information."
+	exit 1
+}
+
+_which() {
+	status=0
+	fail=0
+
+	for cmd do
+		# on GNU which when you use --alll option and pass multiple
+		# binaries, if one is missing which will exit with zero!
+		# I consider this a bug, so that will not happen here
+		if [ -n "$a" ]; then
+			status=1
+			IFS=:
+			for p in $PATH; do
+				if PATH=$p command -v "$cmd"; then
+					status=0
+				fi
+			done
+			if [ "$status" = 1 ]; then
+				>&2 echo "$cmd not found"
+				fail=1
+			fi
+		elif ! command -v "$cmd"; then
+			>&2 echo "$cmd not found"
+			status=1
+		fi
+	done
+
+	if [ "$fail" = 1 ]; then
+		exit "$fail"
 	fi
+
+	exit "$status"
+}
+
+while :; do case "$1" in
+	--)         shift; break;;
+	--help)     _help;;
+	--version)  _version;;
+	-a|--all)   a=1; shift;;
+	'')         _error "$0: missing operand";;
+	-*)         _error "$0: invalid option -- '$1'";;
+	*)          break;;
+	esac
 done
 
-exit "$status"
+_which "$@"
+

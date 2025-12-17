@@ -1,10 +1,39 @@
 #!/bin/sh
 
-read -r arch < /proc/sys/kernel/arch
+_version() {
+	echo "devel"
+	exit 0
+}
 
-if [ -n "$arch" ]; then
-	echo "$arch"
-else
+_help() {
+	echo "Usage: $0 [OPTION]..."
+	echo "Print machine architecture."
+	echo ""
+	echo "      --help        display this help and exit"
+	echo "      --version     output version information and exit"
+	exit 0
+}
+
+_error() {
+	>&2 echo "$*"
+	>&2 echo "Try '$0 --help' for more information."
 	exit 1
-fi
+}
+
+_get_arch() {
+	read -r arch < /proc/sys/kernel/arch
+	if [ -n "$arch" ]; then
+		echo "$arch"
+	else
+		exit 1
+	fi
+}
+
+case "$1" in
+	--)         shift; break;;
+	--help)     _help;;
+	--version)  _version;;
+	'')         _get_arch;;
+	*)          _error "$0: extra operand '$1'";;
+esac
 

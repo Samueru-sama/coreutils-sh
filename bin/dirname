@@ -2,18 +2,69 @@
 
 # from https://github.com/dylanaraps/pure-sh-bible
 
-if [ -z "$1" ]; then
-	return 1
-fi
+unset z
 
-dir="$1"
-dir=${dir%%"${dir##*[!/]}"}
+_version() {
+	echo "devel"
+	exit 0
+}
 
-if [ "${dir##*/*}" ]; then
-	dir=.
-fi
+_help() {
+	echo "Usage: $0 [OPTION] NAME..."
+	echo "Output each NAME with its last non-slash component and trailing slashes"
+	echo "removed; if NAME contains no /'s, output '.' (meaning the current directory)."
+	echo ""
+	echo "  -z, --zero     end each output line with NUL, not newline"
+	echo "      --help        display this help and exit"
+	echo "      --version     output version information and exit"
+	echo ""
+	echo "Examples:"
+	echo "  $0 /usr/bin/          -> \"/usr\""
+	echo "  $0 dir1/str dir2/str  -> \"dir1\" followed by \"dir2\""
+	echo "  $0 stdio.h            -> \".\""
+	exit 0
+}
 
-dir=${dir%/*}
-dir=${dir%%"${dir##*[!/]}"}
+_error() {
+	>&2 echo "$*"
+	>&2 echo "Try '$0 --help' for more information."
+	exit 1
+}
 
-echo "${dir:-/}"
+_dirname() {
+	if [ -z "$1" ]; then
+		exit 1
+	fi
+
+	dir="$1"
+	dir=${dir%%"${dir##*[!/]}"}
+
+	if [ -n "${dir##*/*}" ]; then
+		dir=.
+	fi
+
+	dir=${dir%/*}
+	dir=${dir%%"${dir##*[!/]}"}
+
+	if [ -n "$z" ]; then
+		printf '%s\0' "${dir:-/}"
+	else
+		echo "${dir:-/}"
+	fi
+}
+
+while :; do case "$1" in
+	--)         shift; break;;
+	--help)     _help;;
+	--version)  _version;;
+	-z|--zero)  z=1; shift;;
+	'')         _error "$0: missing operand";;
+	-*)         _error "$0: invalid option -- '$1'";;
+	*)          break;;
+	esac
+done
+
+for i do
+	_dirname "$i"
+done
+
