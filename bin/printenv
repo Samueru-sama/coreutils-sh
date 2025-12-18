@@ -10,7 +10,7 @@
 unset _________________________exit_status__
 
 _version() {
-	echo "devel"
+	echo "$0 (coreutils-sh) devel"
 	exit 0
 }
 

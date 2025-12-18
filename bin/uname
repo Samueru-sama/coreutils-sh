@@ -2,25 +2,9 @@
 
 unset s a n r v m o sep
 
-_print_info() {
-	read -r i < /proc/sys/kernel/"$1"
-	if [ -n "$i" ]; then
-		printf '%s%s' "$sep" "$i"
-		sep=' '
-	else
-		exit 1
-	fi
-}
-
-_error() {
-	>&2 echo "$*"
-	>&2 echo "Try '$0 --help' for more information."
-	exit 1
-}
-
-_gnu_linux() {
-	printf '%s%s' "$sep" 'GNU/Linux'
-	sep=' '
+_version() {
+	echo "$0 (coreutils-sh) devel"
+	exit 0
 }
 
 _help() {
@@ -40,59 +24,84 @@ _help() {
 	exit 0
 }
 
+_error() {
+	>&2 echo "$*"
+	>&2 echo "Try '$0 --help' for more information."
+	exit 1
+}
+
+_print_info() {
+	read -r i < /proc/sys/kernel/"$1"
+	if [ -n "$i" ]; then
+		printf '%s%s' "$sep" "$i"
+		sep=' '
+	else
+		exit 1
+	fi
+}
+
+_gnu_linux() {
+	# this string gets compiled into unamem it can be GNU/Linux or Linux
+	# TODO: Do proper check to know when we are not in GNU/Linux
+	printf '%s%s' "$sep" 'GNU/Linux'
+	sep=' '
+}
+
+_uname() {
+	if [ "$a" = 1 ]; then
+		_print_info 'ostype'
+		_print_info 'hostname'
+		_print_info 'osrelease'
+		_print_info 'version'
+		_print_info 'arch'
+		_gnu_linux
+	else
+		[ -n "$s" ] && _print_info 'ostype'
+		[ -n "$n" ] && _print_info 'hostname'
+		[ -n "$r" ] && _print_info 'osrelease'
+		[ -n "$v" ] && _print_info 'version'
+		[ -n "$m" ] && _print_info 'arch'
+		[ -n "$o" ] && _gnu_linux
+	fi
+}
+
+_parse_short_flag() {
+	while getopts ":sanrvmo" opt; do
+		case "$opt" in
+			s) s=1;;
+			a) a=1;;
+			n) n=1;;
+			r) r=1;;
+			v) v=1;;
+			m) m=1;;
+			o) o=1;;
+			*) _error "$0: invalid option -- '$1'";;
+		esac
+	done
+}
+
 if [ -z "$1" ]; then
 	 _print_info 'ostype'
-	echo ""
-	exit 0
-fi
-
-while :; do case "$1" in
-	--help)             _help;;
-	--all)              a=1; shift;;
-	--kernel-name)      s=1; shift;;
-	--nodename)         n=1; shift;;
-	--kernel-release)   r=1; shift;;
-	--machine)          m=1; shift;;
-	--operating-system) o=1; shift;;
-	-*)
-		while getopts ":sanrvmo" opt; do
-			case "$opt" in
-				s) s=1;;
-				a) a=1;;
-				n) n=1;;
-				r) r=1;;
-				v) v=1;;
-				m) m=1;;
-				o) o=1;;
-				*)
-					_error "$0: invalid option -- '$1'"
-					;;
-			esac
-		done
-		shift
-		;;
-	'')
-		break
-		;;
-	*)
-		_error "$0: extra operand $1"
-		;;
-	esac
-done
-
-if [ "$a" = 1 ]; then
-	_print_info 'ostype'
-	_print_info 'hostname'
-	_print_info 'osrelease'
-	_print_info 'version'
-	_print_info 'arch'
-	_gnu_linux
 else
-	[ -n "$s" ] && _print_info 'ostype'
-	[ -n "$n" ] && _print_info 'hostname'
-	[ -n "$r" ] && _print_info 'osrelease'
-	[ -n "$v" ] && _print_info 'version'
-	[ -n "$m" ] && _print_info 'arch'
-	[ -n "$o" ] && _gnu_linux
+	while :; do case "$1" in
+		--)                 shift; break;;
+		--help)             _help;;
+		--all)              a=1; shift;;
+		--kernel-name)      s=1; shift;;
+		--nodename)         n=1; shift;;
+		--kernel-release)   r=1; shift;;
+		--machine)          m=1; shift;;
+		--operating-system) o=1; shift;;
+		-*)                 _parse_short_flag "$@"; shift;;
+		*)                  break;;
+		esac
+	done
 fi
+
+if [ -n "$1" ]; then
+	_error "$0: extra operand '$1'"
+fi
+
+_uname
 echo ""
+

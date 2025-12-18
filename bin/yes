@@ -3,7 +3,7 @@
 # from https://github.com/dylanaraps/bareutils/blob/master/bin/yes
 
 _version() {
-	echo "devel"
+	echo "$0 (coreutils-sh) devel"
 	exit 0
 }
 
