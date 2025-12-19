@@ -1,6 +1,6 @@
 #!/bin/sh
 
-unset s a n r v m o sep
+unset s a n r v m o sep gnu
 
 _version() {
 	echo "$0 (coreutils-sh) devel"
@@ -41,9 +41,27 @@ _print_info() {
 }
 
 _gnu_linux() {
-	# this string gets compiled into unamem it can be GNU/Linux or Linux
-	# TODO: Do proper check to know when we are not in GNU/Linux
-	printf '%s%s' "$sep" 'GNU/Linux'
+	# on both BusyBox and GNU uname, a GNU/Linux or Linux string gets
+	# compiled into uname, which gets printed when the --all flag is given
+	# This means that if you compile a static uname in a glibc system and
+	# then run it in alpine, it will print GNU/Linux which is not correct
+	#
+	# Instead here we will do a runtime check to see if we are on GNU/Linux
+	#
+	set -- /usr/bin/ldd /bin/ldd
+	for ldd do
+		[ -f "$ldd" ] || continue
+		while IFS="" read -r line; do
+			case "$line" in
+				*GNU*)
+					gnu=GNU/
+					break 2
+					;;
+			esac
+		done < "$ldd"
+	done
+
+	printf '%s%s' "$sep" "${gnu}Linux"
 	sep=' '
 }
 
