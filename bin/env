@@ -1,0 +1,100 @@
+#!/bin/sh
+
+_version() {
+	echo "$0 (coreutils-sh) devel"
+	exit 0
+}
+
+_help() {
+	echo "Usage: $0 [-i0] [-u NAME]... [-] [NAME=VALUE]... [PROG ARGS]"
+	echo ""
+	echo "Print current environment or run PROG after setting up environment"
+	echo ""
+	echo "        -, -i             Start with empty environment"
+	echo "        -u, --unset NAME  Remove variable from environment"
+	exit 0
+}
+
+_error() {
+	>&2 echo "$*"
+	>&2 echo "Try '$0 --help' for more information."
+	exit 1
+}
+
+_unset_all_env() {
+	while IFS="" read -r v; do
+		case "$v" in
+			PATH=*)   continue;; # will be unset later
+			OPTIND=*) continue;; # unset causes shell to fail weird
+			*=*)      v=${v%%=*};;
+			*)        continue;;
+		esac
+		unset "$v"
+	done <<-EOF
+	$(set)
+	EOF
+
+	_=___unset-path
+}
+
+_print_all_env() {
+	# set prints the resulting variable with single quotes, but POSIX
+	# mandates that env print in the following format: "%s=%s\n"
+	# so horrible hack is needed as result
+	# eval should be safe here since we are getting the values of set
+	# which only contains env variables and nothing else
+	set -f
+	set -- $(set)
+	for var; do
+		case "$var" in
+			*=*) :;;
+			*)   continue;;
+		esac
+
+		name=${var%%=*}
+
+		# Not 100% sure if this regex is good enough
+		case "$name" in
+			[!A-Za-z_]*|*[!A-Za-z0-9_]*)
+				continue
+				;;
+		esac
+
+		eval "value=\${$name}"
+		printf '%s=%s\n' "$name" "$value"
+	done
+}
+
+_unset_env() {
+	if [ -z "$2" ]; then
+		_error "$0: option '$1' requires an argument"
+	fi
+	shift
+	for _ do
+		unset "$_"
+	done
+}
+
+while :; do case "$1" in
+	--)          shift; break;;
+	--help)      _help;;
+	--version)   _version;;
+	-|-i)        shift; _unset_all_env "$@";;
+	-u|--unset)  _unset_env "$@"; shift; shift;;
+	-*)          _error "$0: invalid option -- '$1'";;
+	''|*)        break;;
+	esac
+done
+
+if [ -z "$1" ]; then
+	_print_all_env
+else
+	if [ "$_" = '___unset-path' ]; then
+		_=$1
+		shift
+		set -- "$(command -v $_)" "$@"
+		unset PATH _
+	fi
+	exec "$@"
+fi
+
